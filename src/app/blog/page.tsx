@@ -2,6 +2,7 @@ import { client, urlFor } from "@/sanity/lib/client";
 import Image from "next/image";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
+import { Post } from "../../../typing";
 
 const query = `*[_type == "post"]{
   title,

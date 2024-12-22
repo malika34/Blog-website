@@ -23,7 +23,7 @@ const OnThisPage: React.FC<OnThisPageProps> = ({ htmlContent }) => {
 
   return (
     <div className="on-this-page absolute top-36 right-[180px] hidden sm:block">
-      <h2 className="text-md font-bold my-1">On This Page</h2>
+      {/* <h2 className="text-md font-bold my-1">On This Page</h2> */}
       <ul className="text-sm space-y-2">
         {headings.map((heading, index) => (
           <li key={index}>

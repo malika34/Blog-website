@@ -1,4 +1,4 @@
-import { defineType, defineField, defineArrayMember } from "sanity";
+import { defineField, defineArrayMember } from "sanity";
 export const post = defineField({
   name: "post",
   type: "document",
