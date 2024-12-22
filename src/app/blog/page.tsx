@@ -1,31 +1,23 @@
-import fs from "fs";
-import path from "path";
-import matter from "gray-matter";
+import { client, urlFor } from "@/sanity/lib/client";
 import Image from "next/image";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 
-export async function generateStaticParams() {
-  const dirPath = path.join(process.cwd(), "content");
-  const files = fs.readdirSync(dirPath);
-
-  return files.map((file) => {
-    const fileName = file.replace(/\.md$/, "");
-    return {
-      slug: fileName,
-    };
-  });
-}
+const query = `*[_type == "post"]{
+  title,
+  summary,
+  image,
+  "slug": slug.current, // Fetch the slug's current value
+  author->{
+    name,
+    bio,
+    postDate
+  },
+}`;
 
 const Blog = async () => {
-  const dirPath = path.join(process.cwd(), "content");
-  const files = fs.readdirSync(dirPath);
-
-  const blogs = files.map((file) => {
-    const fileContent = fs.readFileSync(path.join(dirPath, file), "utf-8");
-    const { data } = matter(fileContent);
-    return data;
-  });
+  const blogs: Post[] = await client.fetch(query);
+  //console.log(blogs);
 
   return (
     <div className="container mx-auto p-4">
@@ -37,7 +29,7 @@ const Blog = async () => {
             className="rounded-lg shadow-md overflow-hidden dark:border-2 transform transition-transform duration-300 hover:scale-105"
           >
             <Image
-              src={blog.image}
+              src={urlFor(blog.image).url()} // Generate the image URL
               alt={blog.title}
               height={800}
               width={800}
@@ -45,13 +37,15 @@ const Blog = async () => {
             />
             <div className="p-4">
               <h2 className="text-2xl font-bold mb-2">{blog.title}</h2>
-              <p className="mb-4">{blog.description}</p>
+              <p className="mb-4">{blog.summary}</p>
               <div className="text-sm mb-4">
-                <span>By {blog.author}</span> |{" "}
-                <span>{new Date(blog.date).toLocaleDateString()}</span>
+                <span>By {blog.author.name}</span> |{" "}
+                <span>
+                  {new Date(blog.author.postDate).toLocaleDateString()}
+                </span>
               </div>
               <Link
-                href={`/blogpost/${blog.slug}`}
+                href={`/blogpost/${blog.slug}`} // Ensure slug is a string
                 className={buttonVariants({ variant: "outline" })}
               >
                 Click here

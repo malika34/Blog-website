@@ -6,18 +6,19 @@ interface OnThisPageProps {
 }
 
 const OnThisPage: React.FC<OnThisPageProps> = ({ htmlContent }) => {
-  // Function to extract h1 headings from the HTML content
   const extractHeadings = (html: string): { text: string; id: string }[] => {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, "text/html");
-    const headings = Array.from(doc.querySelectorAll("h2"));
-    return headings.map((heading) => ({
-      text: heading.textContent || "",
-      id: heading.id || "",
-    }));
+    if (typeof window !== "undefined") {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, "text/html");
+      const headings = Array.from(doc.querySelectorAll("h2"));
+      return headings.map((heading) => ({
+        text: heading.textContent || "",
+        id: heading.id || "",
+      }));
+    }
+    return [];
   };
 
-  // Extract headings from the provided HTML content
   const headings = extractHeadings(htmlContent);
 
   return (

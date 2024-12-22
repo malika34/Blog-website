@@ -1,6 +1,6 @@
-import fs from "fs";
-import path from "path";
-import matter from "gray-matter";
+import { client } from "@/sanity/lib/client"; // Ensure client is properly configured
+import { PortableText } from "@portabletext/react";
+import { TypedObject } from "@portabletext/types";
 import { notFound } from "next/navigation";
 import { unified } from "unified";
 import remarkParse from "remark-parse";
@@ -13,19 +13,41 @@ import { transformerCopyButton } from "@rehype-pretty/transformers";
 import OnThisPage from "@/components/ui/onthispage";
 import Comments from "@/components/ui/Comments";
 
-export default async function Page({ params }: { params: { slug: string } }) {
-  const filepath = path.join(process.cwd(), "content", `${params.slug}.md`);
+interface Author {
+  name: string;
+  bio?: string;
+  postDate?: string;
+}
 
-  if (!fs.existsSync(filepath)) {
+interface Post {
+  title: string;
+  description: string;
+  content: TypedObject | TypedObject[]; // Updated type
+  author: Author;
+  date?: string;
+}
+
+const query = `*[_type == "post" && slug.current == $slug][0]{
+  title,
+  description,
+  content,
+  author->{
+    name,
+    bio,
+    postDate,
+  },
+}`;
+
+export default async function Page({ params }: { params: { slug: string } }) {
+  // Fetch the blog post using the slug
+  const post: Post | null = await client.fetch(query, { slug: params.slug });
+
+  if (!post) {
     notFound();
-    return;
+    return null;
   }
 
-  const fileContent = fs.readFileSync(filepath, "utf-8");
-  const { content, data } = matter(fileContent);
-
-  // Process the markdown content with unified, remark, and rehype plugins
-
+  // Process the content using unified
   const processor = unified()
     .use(remarkParse)
     .use(remarkRehype)
@@ -42,23 +64,32 @@ export default async function Page({ params }: { params: { slug: string } }) {
       ],
     });
 
-  const htmlContent = (await processor.process(content)).toString();
+  const htmlContent = (
+    await processor.process(post.content as unknown as string)
+  ).toString();
 
   return (
     <div className="max-w-6xl mx-auto p-4">
-      <h1 className="text-4xl font-bold mb-4">{data.title}</h1>
+      <h1 className="text-4xl font-bold mb-4">{post.title}</h1>
       <p className="text-base mb-2 border-l-4 border-gray-500 pl-4 italic">
-        &quot;{data.description}&quot;
+        &quot;{post.author.bio}&quot;
       </p>
       <div className="flex gap-2">
-        <p className="text-sm text-gray-500 mb-4 italic">By {data.author}</p>
-        <p className="text-sm text-gray-500 mb-4">{data.date}</p>
+        <p className="text-sm text-gray-500 mb-4 italic">
+          By {post.author.name}
+        </p>
+        <p className="text-sm text-gray-500 mb-4">
+          {post.date || post.author.postDate}
+        </p>
       </div>
       <div
         dangerouslySetInnerHTML={{ __html: htmlContent }}
         className="prose dark:prose-invert"
       ></div>
       <OnThisPage htmlContent={htmlContent} />
+      <div className="prose dark:prose-invert">
+        <PortableText value={post.content} />
+      </div>
       <div>
         <Comments />
       </div>

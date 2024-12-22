@@ -3,7 +3,8 @@ import Typed from "typed.js";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import React, { useRef, useEffect } from "react";
-function Homepage() {
+import { client } from "@/sanity/lib/client";
+async function Homepage() {
   const el = useRef(null);
 
   useEffect(() => {
